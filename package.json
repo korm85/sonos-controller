@@ -1,0 +1,23 @@
+{
+  "name": "sonos-controller",
+  "version": "1.0.0",
+  "description": "YouTube Music to Sonos bridge",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
+    "express": "^4.18.2",
+    "google-auth-library": "^9.6.0",
+    "scrape-youtube": "^2.4.0",
+    "sonos": "^1.14.3",
+    "ws": "^8.16.0",
+    "ytdl-core": "^4.11.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
+}

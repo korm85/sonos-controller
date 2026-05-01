@@ -1,0 +1,6 @@
+# Dependencies (installed via npm)
+node_modules/
+package-lock.json
+
+# OS files
+.DS_Store

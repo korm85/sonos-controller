@@ -1,0 +1,21 @@
+{
+  "name": "MikSonos",
+  "short_name": "MikSonos",
+  "description": "YouTube music player for Sonos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect fill='%231a1a2e' width='192' height='192' rx='32'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.35em' fill='%23bb86fc' font-size='120'%3E🎵%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect fill='%231a1a2e' width='512' height='512' rx='64'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.35em' fill='%23bb86fc' font-size='320'%3E🎵%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

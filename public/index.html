@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.json">
+<title>MikSonos</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, system-ui, sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; }
+.container { max-width: 480px; margin: 0 auto; padding: 16px; }
+
+header { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; margin-bottom: 8px; }
+header h1 { font-size: 22px; font-weight: 700; background: linear-gradient(135deg, #bb86fc, #03dac6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.status-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #999; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #666; }
+.status-dot.online { background: #4caf50; }
+
+.np-card { background: linear-gradient(145deg, #1a1a2e, #16213e); border-radius: 20px; padding: 24px; margin-bottom: 16px; text-align: center; }
+.np-art { width: 200px; height: 200px; border-radius: 16px; object-fit: cover; margin: 0 auto 12px; display: block; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.np-title { font-size: 20px; font-weight: 600; margin-bottom: 2px; }
+.np-artist { font-size: 15px; color: #999; margin-bottom: 2px; }
+.np-status { font-size: 12px; margin-bottom: 16px; }
+.np-status.playing { color: #4caf50; }
+.np-status.buffering { color: #ff9800; }
+
+/* Seek bar (clickable) */
+.seek-wrap { margin-bottom: 12px; cursor: pointer; position: relative; }
+.seek-bar { height: 6px; background: #333; border-radius: 3px; overflow: hidden; position: relative; }
+.seek-fill { height: 100%; background: linear-gradient(90deg, #bb86fc, #03dac6); border-radius: 3px; transition: width 0.3s ease; pointer-events: none; }
+.seek-time { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-top: 4px; }
+
+/* Controls */
+.controls { display: flex; justify-content: center; align-items: center; gap: 24px; margin-bottom: 16px; }
+.ctrl-btn { width: 48px; height: 48px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; background: transparent; color: #fff; }
+.ctrl-btn:active { transform: scale(0.9); }
+.ctrl-btn.play-btn { width: 64px; height: 64px; background: linear-gradient(135deg, #bb86fc, #9c27b0); color: #fff; font-size: 28px; box-shadow: 0 4px 16px rgba(187,134,252,0.3); }
+
+.volume-row { display: flex; align-items: center; gap: 12px; }
+.volume-row input[type="range"] { flex: 1; -webkit-appearance: none; height: 4px; border-radius: 2px; background: #333; outline: none; }
+.volume-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #bb86fc; cursor: pointer; border: 2px solid #1a1a2e; }
+.volume-label { font-size: 12px; color: #999; min-width: 32px; text-align: right; }
+
+.search-card { background: #1a1a2e; border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+.search-row { display: flex; gap: 8px; }
+.search-row input { flex: 1; padding: 14px 16px; border: 1px solid #333; border-radius: 12px; background: #0a0a0a; color: #fff; font-size: 16px; outline: none; }
+.search-row input:focus { border-color: #bb86fc; }
+.search-row button { padding: 14px 20px; border: none; border-radius: 12px; background: linear-gradient(135deg, #bb86fc, #9c27b0); color: #fff; font-size: 16px; cursor: pointer; font-weight: 600; min-width: 72px; }
+
+.track { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; cursor: pointer; }
+.track:hover { background: #16213e; }
+.track img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.track-info { flex: 1; min-width: 0; }
+.track-title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track-artist { font-size: 12px; color: #999; }
+.track-dur { font-size: 11px; color: #666; margin-top: 2px; }
+.track-play { width: 36px; height: 36px; border-radius: 50%; border: none; background: #bb86fc; color: #000; cursor: pointer; font-size: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.track-play.added { background: #4caf50; }
+
+.playlist-bar { display: flex; align-items: center; justify-content: space-between; background: #1a1a2e; border-radius: 12px; padding: 10px 16px; margin-bottom: 8px; }
+.playlist-bar .pl-info { font-size: 13px; color: #bbb; }
+.playlist-bar .pl-btn { padding: 6px 14px; border-radius: 8px; border: 1px solid #555; background: transparent; color: #999; font-size: 12px; cursor: pointer; }
+.playlist-bar .pl-btn.play { background: linear-gradient(135deg, #bb86fc, #9c27b0); border: none; color: #fff; font-weight: 600; }
+
+.spinner { width: 28px; height: 28px; border: 3px solid #333; border-top-color: #bb86fc; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 16px auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.search-status { text-align: center; padding: 16px; color: #666; font-size: 14px; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 12px 24px; border-radius: 12px; font-size: 14px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>MikSonos</h1>
+    <div class="status-badge">
+      <span id="statusDot" class="status-dot"></span>
+      <span id="statusText">offline</span>
+    </div>
+  </header>
+
+  <div class="np-card">
+    <img id="npArt" class="np-art" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23222222' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23555' font-size='48'%3E🎵%3C/text%3E%3C/svg%3E">
+    <div class="np-title" id="npTitle">Nothing playing</div>
+    <div class="np-artist" id="npArtist">Search for a song</div>
+    <div class="np-status" id="npStatus"></div>
+
+    <!-- Seek bar (click to seek) -->
+    <div class="seek-wrap" id="seekWrap" onclick="seekClick(event)">
+      <div class="seek-bar"><div class="seek-fill" id="seekFill" style="width:0%"></div></div>
+      <div class="seek-time">
+        <span id="timeCurrent">0:00</span>
+        <span id="timeTotal">0:00</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn" onclick="api('/api/playback/previous','POST')">⏮</button>
+      <button class="ctrl-btn play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+      <button class="ctrl-btn" onclick="api('/api/playback/skip','POST')">⏭</button>
+    </div>
+
+    <div class="volume-row">
+      <span style="font-size:14px;">🔉</span>
+      <input type="range" id="volumeSlider" min="0" max="100" oninput="setVolume(this.value)" onchange="setVolume(this.value)">
+      <span class="volume-label" id="volumeLabel">50%</span>
+    </div>
+  </div>
+
+  <!-- Playlist bar -->
+  <div class="playlist-bar" id="playlistBar" style="display:none;">
+    <span class="pl-info" id="plInfo">0 tracks queued</span>
+    <div style="display:flex;gap:8px;">
+      <button class="pl-btn" onclick="clearPlaylist()">Clear</button>
+      <button class="pl-btn play" id="plPlayBtn" onclick="playPlaylist()">▶ Play</button>
+    </div>
+  </div>
+
+  <!-- Cache info -->
+  <div class="search-card" style="margin-bottom:8px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;">
+    <span id="cacheInfo" style="font-size:12px;color:#666;">Cache: --</span>
+    <button onclick="clearCache()" style="padding:4px 12px;border:1px solid #555;border-radius:8px;background:transparent;color:#999;font-size:11px;cursor:pointer;">Clear</button>
+  </div>
+  <div class="search-card">
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="Search YouTube..." onkeydown="if(event.key==='Enter') search()">
+      <button onclick="search()">🔍</button>
+    </div>
+    <div id="searchResults" style="margin-top:12px;"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var polling = false, playing = false, duration = 0;
+var seekWrap = document.getElementById('seekWrap');
+
+function startPolling() { if (polling) return; polling = true; poll(); }
+function setStatus(label, ok) {
+  document.getElementById('statusDot').className = 'status-dot' + (ok ? ' online' : '');
+  document.getElementById('statusText').textContent = label;
+}
+
+async function poll() {
+  try {
+    var res = await fetch('/api/playback/now-playing');
+    if (res.ok) {
+      var data = await res.json();
+      updateNowPlaying(data);
+      setStatus('online', true);
+    } else { setStatus('error', false); }
+  } catch { setStatus('offline', false); }
+  if (polling) setTimeout(poll, 2000);
+}
+
+function updateNowPlaying(data) {
+  var title = data.track?.title || 'Nothing playing';
+  var artist = data.track?.artist || '';
+  var state = data.state || 'stopped';
+  duration = data.duration || 0;
+
+  document.getElementById('npTitle').textContent = title;
+  document.getElementById('npArtist').textContent = artist;
+  if (data.track?.albumArtUri) document.getElementById('npArt').src = data.track.albumArtUri;
+
+  var st = document.getElementById('npStatus');
+  if (state === 'playing') { st.textContent = 'Now Playing'; st.className = 'np-status playing'; }
+  else if (state === 'transitioning') { st.textContent = 'Buffering...'; st.className = 'np-status buffering'; }
+  else if (state === 'paused') { st.textContent = 'Paused'; st.className = 'np-status buffering'; }
+  else { st.textContent = 'Stopped'; st.className = 'np-status'; }
+
+  playing = state === 'playing';
+  document.getElementById('playBtn').textContent = state === 'playing' ? '⏸' : '▶';
+
+  var pos = data.position || 0;
+  var pct = duration > 0 ? Math.min(100, (pos / duration) * 100) : 0;
+  document.getElementById('seekFill').style.width = pct + '%';
+  document.getElementById('timeCurrent').textContent = fmtTime(pos);
+  document.getElementById('timeTotal').textContent = fmtTime(duration);
+
+  if (data.volume !== undefined && data.volume !== null) {
+    document.getElementById('volumeSlider').value = data.volume;
+    document.getElementById('volumeLabel').textContent = data.volume + '%';
+  }
+}
+
+// Click on seek bar to seek
+function seekClick(e) {
+  if (!duration) return;
+  var rect = seekWrap.getBoundingClientRect();
+  var x = (e.clientX - rect.left) / rect.width;
+  var sec = Math.round(x * duration);
+  fetch('/api/playback/seek', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({position: sec})
+  }).catch(function(){});
+}
+
+async function search() {
+  var q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  var results = document.getElementById('searchResults');
+  results.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    var res = await fetch('/api/search?q=' + encodeURIComponent(q));
+    if (!res.ok) throw new Error(await res.text());
+    var tracks = await res.json();
+
+    if (tracks.length === 0) {
+      results.innerHTML = '<div class="search-status">No results found</div>';
+      return;
+    }
+
+    results.innerHTML = tracks.map(function(t) {
+      var sid = esc(t.id), stitle = esc(t.title), sartist = esc(t.artist);
+      var sthumb;
+      return '<div class="track" id="trk_' + sid + '">' +
+        '<img src="' + (t.thumbnail || '') + '" alt="" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2248%22%3E%3Crect fill=%22%23333%22 width=%2248%22 height=%2248%22/%3E%3C/svg%3E\'">' +
+        '<div class="track-info">' +
+        '<div class="track-title">' + stitle + '</div>' +
+        '<div class="track-artist">' + sartist + '</div>' +
+        '<div class="track-dur">' + fmtTime(t.duration) + '</div></div>' +
+        '<button class="track-play" id="add_' + sid + '" onclick="event.stopPropagation();addToPlaylist(\'' + sid + '\',\'' + stitle + '\',\'' + sartist + '\',\'' + sthumb + '\',' + (t.duration||0) + ');">+</button></div>' +
+        '<div class="track-actions" style="display:flex;gap:4px;margin-top:4px;padding:0 12px 8px;"><button class="track-play" style="font-size:12px;width:auto;padding:0 12px;" onclick="playTrack(\'' + sid + '\',\'' + stitle + '\',\'' + sartist + '\',\'' + sthumb + '\',' + (t.duration||0) + ');">▶ Play</button></div>';
+    }).join('');
+  } catch (e) {
+    results.innerHTML = '<div class="search-status">Search failed: ' + e.message + '</div>';
+  }
+}
+
+function playTrack(id, title, artist, thumbnail, duration) {
+  showToast('Loading...');
+  fetch('/api/playback/play', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({trackId: id, title: title, artist: artist, thumbnail: thumbnail || '', duration: duration || 0})
+  }).then(function(r) {
+    if (r.ok) {
+      document.getElementById('npTitle').textContent = title;
+      document.getElementById('npArtist').textContent = artist;
+      if (thumbnail) document.getElementById('npArt').src = thumbnail;
+      showToast('▶ ' + title);
+    } else {
+      r.text().then(function(t) { showToast('Error: ' + t); });
+    }
+  }).catch(function(e) { showToast('Error: ' + e.message); });
+}
+
+var playlist = [];
+
+function addToPlaylist(id, title, artist, thumbnail, duration) {
+  if (playlist.some(function(t){return t.id===id;})) {
+    showToast('Already in playlist');
+    return;
+  }
+  playlist.push({id:id,title:title,artist:artist,thumbnail:thumbnail,duration:duration});
+  updatePlaylistUI();
+  var btn = document.getElementById('add_' + id);
+  if (btn) { btn.textContent = '✓'; btn.classList.add('added'); }
+  showToast('+ ' + title);
+}
+
+function clearPlaylist() {
+  playlist = [];
+  updatePlaylistUI();
+  document.querySelectorAll('.track-play.added').forEach(function(b){b.textContent='+';b.classList.remove('added');});
+  showToast('Playlist cleared');
+}
+
+function playPlaylist() {
+  if (playlist.length === 0) return;
+  var first = playlist[0];
+  playTrack(first.id, first.title, first.artist, first.thumbnail, first.duration);
+  for (var i = 1; i < playlist.length; i++) {
+    (function(t){
+      fetch('/api/playback/queue', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({trackId: t.id, title: t.title, artist: t.artist, thumbnail: t.thumbnail, duration: t.duration})
+      }).catch(function(){});
+    })(playlist[i]);
+  }
+}
+
+function updatePlaylistUI() {
+  var bar = document.getElementById('playlistBar');
+  var info = document.getElementById('plInfo');
+  if (playlist.length === 0) {
+    bar.style.display = 'none';
+  } else {
+    bar.style.display = 'flex';
+    info.textContent = playlist.length + ' track' + (playlist.length !== 1 ? 's' : '') + ' queued';
+  }
+}
+
+function togglePlay() {
+  fetch(playing ? '/api/playback/pause' : '/api/playback/resume', {method:'POST'})
+    .catch(function(e){ showToast('Error'); });
+}
+
+function setVolume(val) {
+  document.getElementById('volumeLabel').textContent = val + '%';
+  fetch('/api/playback/volume', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({level: parseInt(val)})
+  }).catch(function(){});
+}
+
+function api(url, method) { fetch(url, {method:method||'GET'}).catch(function(){}); }
+
+function fmtTime(s) {
+  if (!s || s < 0) return '0:00';
+  var m = Math.floor(s / 60);
+  var sec = Math.floor(s % 60);
+  return m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+var toastTimer;
+function showToast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
+}
+
+// Update cache stats periodically
+async function updateCacheStats() {
+  try {
+    var res = await fetch('/api/cache');
+    if (res.ok) {
+      var data = await res.json();
+      document.getElementById('cacheInfo').textContent =
+        'Cache: ' + data.files + ' files, ' + data.totalMB + 'MB';
+    }
+  } catch {}
+  setTimeout(updateCacheStats, 10000);
+}
+
+async function clearCache() {
+  try {
+    await fetch('/api/cache/clear', {method:'POST'});
+    showToast('Cache cleared');
+    updateCacheStats();
+  } catch {}
+}
+
+// Register service worker for PWA install
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+
+startPolling();
+updateCacheStats();
+</script>
+</body>
+</html>

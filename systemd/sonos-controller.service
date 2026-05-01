@@ -1,0 +1,24 @@
+[Unit]
+Description=Sonos YouTube Controller - Bridge between YouTube audio and Sonos speakers
+Documentation=https://github.com/yourusername/sonos-controller
+After=network.target
+
+[Service]
+Type=simple
+User=nuc
+WorkingDirectory=/home/nuc/sonos-controller
+ExecStart=/usr/bin/node src/index.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=STREAM_PORT=3001
+
+# Optional: Google OAuth credentials (get from Google Cloud Console)
+# Environment=GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+# Environment=GOOGLE_CLIENT_SECRET=your-client-secret
+
+[Install]
+WantedBy=multi-user.target
